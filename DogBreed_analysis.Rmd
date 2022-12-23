@@ -4,9 +4,9 @@ author: "HunorKis"
 date: "2022-12-23"
 output: html_document
 ---
-#Background for the project
+# Background for the project
 
-##Core idea:
+## Core idea:
 I would like to investigate the most important aspects by which we decide to buy a dog. It is a broadly discussed in dog related communites that Hungaricum dogbreeds are less and less chosen. To learn more about this topic you might want to check the [Ki kutyája vagyok én?](https://port.hu/adatlap/film/mozi/ki-kutyaja-vagyok-en-ki-kutyaja-vagyok-en-whose-dog-am-i/movie-243298) - titled movie, that was recently premiered.
 
 I want to investigate the most important factors that define a top level dog and then I would like to create a model about the most important predictors.
@@ -68,9 +68,9 @@ df_main <- df_main %>%
 
 ```
  
-#EA: In this section I will explore the dataset
+# EA: In this section I will explore the dataset
 
-##Top 10 most and least popular breed
+## Top 10 most and least popular breed
 
 ```{r}
 head(df_main, 10)
@@ -81,7 +81,7 @@ tail(df_main, 10)
 
 ```
 
-##Check whether 
+## Check whether 
 
 ```{r}
 
@@ -94,7 +94,7 @@ df_main %>%
   labs(title = "The changes in the position of ranked dogs between 2013-2020")
 ```
 
-#From here on, I would like to analyze the characteristics of the most popular and least popular dogs from 2020
+# From here on, I would like to analyze the characteristics of the most popular and least popular dogs from 2020
 
 ```{r}
 df_main %>% 
@@ -104,7 +104,7 @@ df_main %>%
   theme_light()+
   labs(title = "The distribution of Coat_type by Rankings in 2020",y = NULL, x = NULL)
 ```
-##Now we will check the metrics that could predict how would the dog interact with people and dogs.
+## Now we will check the metrics that could predict how would the dog interact with people and dogs.
 
 ```{r}
 df_main %>% 
@@ -133,7 +133,7 @@ df_main %>%
 
 ```
 
-##Now I want to further investigate the coat type and popularity
+## Now I want to further investigate the coat type and popularity
 
 ```{r}
 df_main %>% 
@@ -152,7 +152,7 @@ df_main %>%
 ```
 
 
-##Now I will check how other role related information can impact the judgement
+## Now I will check how other role related information can impact the judgement
 
 ```{r}
 df_main %>% 
@@ -183,7 +183,7 @@ cor.test(df_main$Openness_To_Strangers, df_main$Watchdog_Protective_Nature )
 ```
 Unfortunately, I could not find a strong correlation between the Openness_To_Strangers and Watchdog_traits..
 
-##Finally I would like to check the Trainability and Adaptability
+## Finally I would like to check the Trainability and Adaptability
 
 ```{r}
 df_main %>% 
@@ -212,7 +212,7 @@ df_main %>%
 cor.test(df_main$Adaptability_Level, df_main$Trainability_Level )
 ```
 
-#Building Models
+# Building Models
 
 ```{r}
 Ranking_Model_Complex <- lm(Rank_2020~ Affectionate_With_Family + Good_With_Young_Children + Good_With_Other_Dogs + Watchdog_Protective_Nature + Openness_To_Strangers + Adaptability_Level + Trainability_Level, data = df_main)
@@ -241,31 +241,31 @@ anova( Ranking_Model_role, Ranking_Model_FamilyTraits)
 
 By comparing the three models, I have decided to go with the 3 factors that are connected to FamilyTraits
 
-#Choosen model + Assumption check:
-##Summary of the model
+# Choosen model + Assumption check:
+## Summary of the model
 ```{r}
 summary(Ranking_Model_FamilyTraits)
 ```
 
-##Check for outliers
+## Check for outliers
 ```{r}
 plot(Ranking_Model_FamilyTraits, which = 5)
 ```
 
-##Checking normality
+## Checking normality
 ```{r}
 residuals <- residuals(Ranking_Model_FamilyTraits) 
 hist(residuals)
 ```
 
-#&Checking linearity
+## Checking linearity
 ```{r}
 fitted_values <- fitted(Ranking_Model_FamilyTraits)
 plot(fitted_values, residuals, xlab = "Fitted Values", ylab = "Residuals")
 abline(h = 0)
 ```
 
-##Checking Multicollinearity
+## Checking Multicollinearity
 ```{r}
 
 vifs <- vif(Ranking_Model_FamilyTraits)
@@ -274,7 +274,7 @@ vifs
 
 ```
 
-#Looking at the data of Hungarian dogs
+# Looking at the data of Hungarian dogs
 
 ```{r}
 df_hungarian <- df_main %>% 
