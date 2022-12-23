@@ -217,7 +217,7 @@ cor.test(df_main$Adaptability_Level, df_main$Trainability_Level )
 ```{r}
 Ranking_Model_Complex <- lm(Rank_2020~ Affectionate_With_Family + Good_With_Young_Children + Good_With_Other_Dogs + Watchdog_Protective_Nature + Openness_To_Strangers + Adaptability_Level + Trainability_Level, data = df_main)
 
-summary(Ranking_Model)
+summary(Ranking_Model_Complex)
 
 
 Ranking_Model_FamilyTraits <- lm(Rank_2020~ Affectionate_With_Family + Good_With_Young_Children + Good_With_Other_Dogs, data = df_main)
