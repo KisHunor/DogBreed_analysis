@@ -4,23 +4,283 @@ author: "HunorKis"
 date: "2022-12-23"
 output: html_document
 ---
+#Background for the project
+
+##Core idea:
+I would like to investigate the most important aspects by which we decide to buy a dog. It is a broadly discussed in dog related communites that Hungaricum dogbreeds are less and less chosen. To learn more about this topic you might want to check the [Ki kutyája vagyok én?](https://port.hu/adatlap/film/mozi/ki-kutyaja-vagyok-en-ki-kutyaja-vagyok-en-whose-dog-am-i/movie-243298) - titled movie, that was recently premiered.
+
+I want to investigate the most important factors that define a top level dog and then I would like to create a model about the most important predictors.
+Finally, I hope that I will see these predictor values to be lower in Hungarian breeds and that would serv as some sort of explanation.
+
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Read the dataset + add packages
+Read the dataset + add packages: To read the data I have used a simple readr method with the links for the dataset available on Github.
 ```{r}
 library(tidyverse)
 library(dplyr)
+library(car)
+
 
 breed_traits <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-02-01/breed_traits.csv')
 trait_description <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-02-01/trait_description.csv')
 breed_rank_all <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-02-01/breed_rank.csv')
+
+
 ```
- Getting the data that I want to analyse
+
+ Getting the data that I want to analyse: First of all, I needed to combine the two datasets for easier handling. All the changes will be find in this chunk.
  
 ```{r}
 
+#Combine dataframes:
+df_main <- cbind( breed_traits, breed_rank_all[2:9]) 
+
+
+
+#remove spaces from colnames:
+colnames(df_main) <- gsub(" ", "_", colnames(df_main))
+colnames(df_main) <- gsub("/", "_", colnames(df_main))
+
+
+#change colnames where number:
+
+colnames(df_main)[18] <- "Rank_2013"
+colnames(df_main)[19] <- "Rank_2014"
+colnames(df_main)[20] <- "Rank_2015"
+colnames(df_main)[21] <- "Rank_2016"
+colnames(df_main)[22] <- "Rank_2017"
+colnames(df_main)[23] <- "Rank_2018"
+colnames(df_main)[24] <- "Rank_2019"
+colnames(df_main)[25] <- "Rank_2020"
+
+#Main table: since there are too much ranks to be handled, I added an extra column with popularity rankings, I have also filtered those that appear only in the 2020 ranking
+bins <-c(0, 35, 70 , 105, 140, Inf)
+
+df_main <- df_main %>% 
+  filter(!is.na(Rank_2013)) %>% 
+  mutate(Rank_cat = cut(Rank_2020, breaks = bins, labels = c("HighestRanking", "GoodRanking", "MediumRanking", "MediumLowRanking", "LowRanking"))) %>% 
+  mutate(Coat_Type = as.factor(Coat_Type))
+
+
 ```
  
+#EA: In this section I will explore the dataset
+
+##Top 10 most and least popular breed
+
+```{r}
+head(df_main, 10)
+
+tail(df_main, 10)
+
+
+
+```
+
+##Check whether 
+
+```{r}
+
+df_main %>% 
+  ggplot()+
+  aes(x = Rank_2020, y = Rank_2013)+
+  geom_point()+
+  geom_smooth(method='lm')+
+  theme_light()+
+  labs(title = "The changes in the position of ranked dogs between 2013-2020")
+```
+
+#From here on, I would like to analyze the characteristics of the most popular and least popular dogs from 2020
+
+```{r}
+df_main %>% 
+  ggplot()+
+  aes(x = Coat_Type, fill = Rank_cat) +
+  geom_bar()+
+  theme_light()+
+  labs(title = "The distribution of Coat_type by Rankings in 2020",y = NULL, x = NULL)
+```
+##Now we will check the metrics that could predict how would the dog interact with people and dogs.
+
+```{r}
+df_main %>% 
+  ggplot()+
+  aes(y = Affectionate_With_Family)+
+  geom_boxplot()+
+  facet_wrap(~ Rank_cat)+
+  theme_light()+
+  labs(title = "Affectionate_With_Family")
+
+df_main %>% 
+  ggplot()+
+  aes(y = Good_With_Young_Children)+
+  geom_boxplot()+
+  facet_wrap(~ Rank_cat) +
+  theme_light()+
+  labs(title = "Good_With_Young_Children")
+
+df_main %>% 
+  ggplot()+
+  aes(y = Good_With_Other_Dogs)+
+  geom_boxplot()+
+  facet_wrap(~ Rank_cat) +
+  theme_light()+
+  labs(title = "Good_With_Other_Dogs")
+
+```
+
+##Now I want to further investigate the coat type and popularity
+
+```{r}
+df_main %>% 
+  ggplot()+
+  aes(y = Shedding_Level, fill = Rank_cat)+
+  geom_boxplot() +
+  theme_light()+
+  labs(title = "Shedding Level by ranks")
+
+df_main %>% 
+  ggplot()+
+  aes(y = Drooling_Level, fill = Rank_cat)+
+  geom_boxplot()+
+  theme_light()+
+  labs(title = "Drooling Level by ranks")
+```
+
+
+##Now I will check how other role related information can impact the judgement
+
+```{r}
+df_main %>% 
+  ggplot()+
+  aes(y= Watchdog_Protective_Nature, fill = Rank_cat)+
+  geom_boxplot() +
+  theme_light()+
+  labs(title = "Watchdog qualities by ranks")
+
+df_main %>% 
+  ggplot()+
+  aes(y= Openness_To_Strangers, fill = Rank_cat)+
+  geom_boxplot()  +
+  theme_light()+
+  labs(title = "Openness to Strangers by ranks")
+
+#Presumable there is a correlation between the protectiveness and openness_To_Strangers
+
+df_main %>% 
+  ggplot()+
+  aes(x= Openness_To_Strangers, y = Watchdog_Protective_Nature)+
+  geom_count()+
+  theme_light()+
+  labs(title = "Compare the Openness To Strangers with Watchdog qualities")
+  
+
+cor.test(df_main$Openness_To_Strangers, df_main$Watchdog_Protective_Nature )
+```
+Unfortunately, I could not find a strong correlation between the Openness_To_Strangers and Watchdog_traits..
+
+##Finally I would like to check the Trainability and Adaptability
+
+```{r}
+df_main %>% 
+  ggplot()+
+  aes(y= Trainability_Level, fill = Rank_cat)+
+  geom_boxplot() +
+  theme_light()+
+  labs(title = "Trainability level by rank")
+
+df_main %>% 
+  ggplot()+
+  aes(y= Adaptability_Level, fill = Rank_cat)+
+  geom_boxplot() +
+  theme_light()+
+  labs(title = "Adaptability level by rank")
+
+#Here, I also wanted to see the interaction:
+
+df_main %>%
+  ggplot() +
+  aes(x = Trainability_Level, y = Adaptability_Level) +
+  geom_count()+
+  theme_light()+
+  labs(title = "Adaptability level vs. Trainability levels")
+
+cor.test(df_main$Adaptability_Level, df_main$Trainability_Level )
+```
+
+#Building Models
+
+```{r}
+Ranking_Model_Complex <- lm(Rank_2020~ Affectionate_With_Family + Good_With_Young_Children + Good_With_Other_Dogs + Watchdog_Protective_Nature + Openness_To_Strangers + Adaptability_Level + Trainability_Level, data = df_main)
+
+summary(Ranking_Model)
+
+
+Ranking_Model_FamilyTraits <- lm(Rank_2020~ Affectionate_With_Family + Good_With_Young_Children + Good_With_Other_Dogs, data = df_main)
+
+summary(Ranking_Model_FamilyTraits)
+
+Ranking_Model_role <- lm(Rank_2020~ Watchdog_Protective_Nature + Openness_To_Strangers + Adaptability_Level + Trainability_Level, data = df_main)
+
+summary(Ranking_Model_role)
+
+
+anova(Ranking_Model_Complex, Ranking_Model_FamilyTraits)
+
+anova(Ranking_Model_Complex, Ranking_Model_role)
+
+anova( Ranking_Model_role, Ranking_Model_FamilyTraits)
+
+
+
+```
+
+By comparing the three models, I have decided to go with the 3 factors that are connected to FamilyTraits
+
+#Choosen model + Assumption check:
+##Summary of the model
+```{r}
+summary(Ranking_Model_FamilyTraits)
+```
+
+##Check for outliers
+```{r}
+plot(Ranking_Model_FamilyTraits, which = 5)
+```
+
+##Checking normality
+```{r}
+residuals <- residuals(Ranking_Model_FamilyTraits) 
+hist(residuals)
+```
+
+#&Checking linearity
+```{r}
+fitted_values <- fitted(Ranking_Model_FamilyTraits)
+plot(fitted_values, residuals, xlab = "Fitted Values", ylab = "Residuals")
+abline(h = 0)
+```
+
+##Checking Multicollinearity
+```{r}
+
+vifs <- vif(Ranking_Model_FamilyTraits)
+
+vifs
+
+```
+
+#Looking at the data of Hungarian dogs
+
+```{r}
+df_hungarian <- df_main %>% 
+  filter(Breed %in% c("Komondorok", "Kuvaszok", "Pulik")) 
+  
+
+
+df_hungarian[, c("Breed","Affectionate_With_Family", "Good_With_Young_Children", "Good_With_Other_Dogs", "Rank_2020")]
+```
